@@ -118,12 +118,12 @@ impl<F: Field, T: Copy + Into<F>> AssignedCell<F, T> {
             match column.column_type() {
                 Any::Advice => {
                     region.assign_advice(annotation, column.try_into().unwrap(), offset, || {
-                        value.ok_or(Error::SynthesisError)
+                        value.ok_or(Error::Synthesis)
                     })?
                 }
                 Any::Fixed => {
                     region.assign_fixed(annotation, column.try_into().unwrap(), offset, || {
-                        value.ok_or(Error::SynthesisError)
+                        value.ok_or(Error::Synthesis)
                     })?
                 }
                 _ => unreachable!(),
@@ -165,7 +165,7 @@ impl<F: Field, T: Copy + Into<F>> AssignedCell<F, T> {
         AR: Into<String>,
     {
         let cell = region.assign_advice(annotation, column, offset, || {
-            self.value_field().ok_or(Error::SynthesisError)
+            self.value_field().ok_or(Error::Synthesis)
         })?;
         region.constrain_equal(cell, self.cell())?;
 
