@@ -94,18 +94,19 @@ pub struct Cell {
 
 /// An assigned cell.
 #[derive(Clone, Copy, Debug)]
-pub struct AssignedCell<F: Field, T: Copy + Into<F>> {
+pub struct AssignedCell<F: Field, T: Clone + Into<F>> {
     value: Option<T>,
     cell: Cell,
     _marker: PhantomData<F>,
 }
 
-impl<F: Field, T: Copy + Into<F>> AssignedCell<F, T> {
+impl<F: Field, T: Clone + Into<F>> AssignedCell<F, T> {
     /// Assign a new AssignedCell.
-    pub fn assign<A, AR>(
+    /// Note that this does not enforce circuit constraints for type-safety.
+    pub fn assign_unchecked<A, AR>(
         region: &mut Region<'_, F>,
         annotation: A,
-        column: Column<Any>,
+        column: impl Into<Column<Any>>,
         offset: usize,
         value: Option<T>,
     ) -> Result<Self, Error>
@@ -114,7 +115,8 @@ impl<F: Field, T: Copy + Into<F>> AssignedCell<F, T> {
         AR: Into<String>,
     {
         let cell = {
-            let value: Option<F> = value.map(|v| v.into());
+            let value: Option<F> = value.clone().map(|v| v.into());
+            let column: Column<Any> = column.into();
             match column.column_type() {
                 Any::Advice => {
                     region.assign_advice(annotation, column.try_into().unwrap(), offset, || {
@@ -126,7 +128,7 @@ impl<F: Field, T: Copy + Into<F>> AssignedCell<F, T> {
                         value.ok_or(Error::Synthesis)
                     })?
                 }
-                _ => unreachable!(),
+                _ => panic!("cells in an instance column cannot be assigned to"),
             }
         };
 
@@ -139,12 +141,12 @@ impl<F: Field, T: Copy + Into<F>> AssignedCell<F, T> {
 
     /// Returns the value of the AssignedCell.
     pub fn value(&self) -> Option<T> {
-        self.value
+        self.value.clone()
     }
 
     /// Returns the value of the AssignedCell.
     pub fn value_field(&self) -> Option<F> {
-        self.value.map(|v| v.into())
+        self.value().map(|v| v.into())
     }
 
     /// Returns the cell.
@@ -153,6 +155,9 @@ impl<F: Field, T: Copy + Into<F>> AssignedCell<F, T> {
     }
 
     /// Copies the value to a given advice cell and constrains them to be equal.
+    ///
+    /// Returns an error if either this cell or the given cell are in columns
+    /// where equality has not been enabled.
     pub fn copy_advice<A, AR>(
         &self,
         annotation: A,

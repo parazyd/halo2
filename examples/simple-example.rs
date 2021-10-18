@@ -161,10 +161,10 @@ impl<F: FieldExt> NumericInstructions<F> for FieldChip<F> {
         layouter.assign_region(
             || "load private",
             |mut region| {
-                AssignedCell::assign(
+                AssignedCell::assign_unchecked(
                     &mut region,
                     || "private input",
-                    config.advice[0].into(),
+                    config.advice[0],
                     0,
                     value,
                 )
@@ -219,10 +219,10 @@ impl<F: FieldExt> NumericInstructions<F> for FieldChip<F> {
                 // to be used in another part of the circuit.
 
                 let value = lhs.value().and_then(|lhs| rhs.value().map(|rhs| lhs * rhs));
-                AssignedCell::assign(
+                AssignedCell::assign_unchecked(
                     &mut region,
                     || "lhs * rhs",
-                    config.advice[0].into(),
+                    config.advice[0],
                     1,
                     value,
                 )

@@ -215,10 +215,10 @@ impl<F: FieldExt> AddInstructions<F> for AddChip<F> {
 
                 // Now we can assign the multiplication result into the output position.
                 let value = lhs.value().and_then(|lhs| rhs.value().map(|rhs| lhs + rhs));
-                AssignedCell::assign(
+                AssignedCell::assign_unchecked(
                     &mut region,
                     || "lhs * rhs",
-                    config.advice[0].into(),
+                    config.advice[0],
                     1,
                     value,
                 )
@@ -336,10 +336,10 @@ impl<F: FieldExt> MulInstructions<F> for MulChip<F> {
 
                 // Now we can assign the multiplication result into the output position.
                 let value = lhs.value().and_then(|lhs| rhs.value().map(|rhs| lhs * rhs));
-                AssignedCell::assign(
+                AssignedCell::assign_unchecked(
                     &mut region,
                     || "lhs * rhs",
-                    config.advice[0].into(),
+                    config.advice[0],
                     1,
                     value,
                 )
@@ -407,10 +407,10 @@ impl<F: FieldExt> FieldInstructions<F> for FieldChip<F> {
         layouter.assign_region(
             || "load private",
             |mut region| {
-                AssignedCell::assign(
+                AssignedCell::assign_unchecked(
                     &mut region,
                     || "private input",
-                    config.advice[0].into(),
+                    config.advice[0],
                     0,
                     value,
                 )
