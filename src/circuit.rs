@@ -256,7 +256,7 @@ impl<'r, F: Field> Region<'r, F> {
         constant: VR,
     ) -> Result<AssignedCell<F, F>, Error>
     where
-        VR: Into<Assigned<F>> + Copy,
+        VR: Into<Assigned<F>>,
         A: Fn() -> AR,
         AR: Into<String>,
     {
