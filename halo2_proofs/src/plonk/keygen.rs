@@ -23,7 +23,8 @@ use crate::{
 };
 
 pub(crate) fn create_domain<C, ConcreteCircuit>(
-    params: &Params<C>,
+    k: u32,
+    #[cfg(feature = "circuit-params")] params: ConcreteCircuit::Params,
 ) -> (
     EvaluationDomain<C::Scalar>,
     ConstraintSystem<C::Scalar>,
@@ -34,11 +35,14 @@ where
     ConcreteCircuit: Circuit<C::Scalar>,
 {
     let mut cs = ConstraintSystem::default();
+    #[cfg(feature = "circuit-params")]
+    let config = ConcreteCircuit::configure_with_params(&mut cs, params);
+    #[cfg(not(feature = "circuit-params"))]
     let config = ConcreteCircuit::configure(&mut cs);
 
     let degree = cs.degree();
 
-    let domain = EvaluationDomain::new(degree as u32, params.k);
+    let domain = EvaluationDomain::new(degree as u32, k);
 
     (domain, cs, config)
 }
@@ -195,7 +199,11 @@ where
     C::Scalar: FromUniformBytes<64>,
     ConcreteCircuit: Circuit<C::Scalar>,
 {
-    let (domain, cs, config) = create_domain::<C, ConcreteCircuit>(params);
+    let (domain, cs, config) = create_domain::<C, ConcreteCircuit>(
+        params.k,
+        #[cfg(feature = "circuit-params")]
+        circuit.params(),
+    );
 
     if (params.n as usize) < cs.minimum_rows() {
         return Err(Error::not_enough_rows_available(params.k));
@@ -219,7 +227,7 @@ where
     )?;
 
     let mut fixed = batch_invert_assigned(assembly.fixed);
-    let (cs, selector_polys) = cs.compress_selectors(assembly.selectors);
+    let (cs, selector_polys) = cs.compress_selectors(assembly.selectors.clone());
     fixed.extend(
         selector_polys
             .into_iter()
@@ -240,6 +248,7 @@ where
         fixed_commitments,
         permutation_vk,
         cs,
+        assembly.selectors,
     ))
 }
 
@@ -254,6 +263,9 @@ where
     ConcreteCircuit: Circuit<C::Scalar>,
 {
     let mut cs = ConstraintSystem::default();
+    #[cfg(feature = "circuit-params")]
+    let config = ConcreteCircuit::configure_with_params(&mut cs, circuit.params());
+    #[cfg(not(feature = "circuit-params"))]
     let config = ConcreteCircuit::configure(&mut cs);
 
     let cs = cs;

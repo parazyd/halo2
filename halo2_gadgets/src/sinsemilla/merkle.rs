@@ -302,6 +302,8 @@ pub mod tests {
             MerkleConfig<TestHashDomain, TestCommitDomain, TestFixedBases, Lookup>,
         );
         type FloorPlanner = SimpleFloorPlanner;
+        #[cfg(feature = "circuit-params")]
+        type Params = ();
 
         fn without_witnesses(&self) -> Self {
             MyMerkleCircuit::new(Value::default(), Value::default(), Value::default())

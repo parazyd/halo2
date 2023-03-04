@@ -900,6 +900,8 @@ mod tests {
     {
         type Config = Lookup;
         type FloorPlanner = SimpleFloorPlanner;
+        #[cfg(feature = "circuit-params")]
+        type Params = ();
 
         fn without_witnesses(&self) -> Self {
             MyLookupCircuit::new(self.num_words)
@@ -1023,6 +1025,8 @@ mod tests {
     {
         type Config = Lookup;
         type FloorPlanner = SimpleFloorPlanner;
+        #[cfg(feature = "circuit-params")]
+        type Params = ();
 
         fn without_witnesses(&self) -> Self {
             MyShortRangeCheckCircuit::new(Value::unknown(), self.num_bits)
