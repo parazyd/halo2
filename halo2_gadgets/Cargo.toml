@@ -64,6 +64,7 @@ test-dependencies = [
     "proptest",
     "sinsemilla/test-dependencies",
 ]
+circuit-params = ["halo2_proofs/circuit-params"]
 
 # In-development features
 # See https://zcash.github.io/halo2/dev/features.html

@@ -526,6 +526,8 @@ mod tests {
         impl Circuit<Fp> for MyCircuit {
             type Config = ();
             type FloorPlanner = SimpleFloorPlanner;
+            #[cfg(feature = "circuit-params")]
+            type Params = ();
 
             fn without_witnesses(&self) -> Self {
                 Self

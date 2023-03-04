@@ -379,6 +379,11 @@ impl<F: WithSmallOrderMulGroup<3>> EvaluationDomain<F> {
         });
     }
 
+    /// Get the size of the domain
+    pub fn k(&self) -> u32 {
+        self.k
+    }
+
     /// Get the size of the extended domain
     pub fn extended_len(&self) -> usize {
         1 << self.extended_k
