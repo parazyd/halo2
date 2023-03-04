@@ -48,14 +48,82 @@ pub struct VerifyingKey<C: CurveAffine> {
     cs_degree: usize,
     /// The representative of this `VerifyingKey` in transcripts.
     transcript_repr: C::Scalar,
+    selectors: Vec<Vec<bool>>,
 }
 
 impl<C: CurveAffine> VerifyingKey<C> {
+    /// Writes a verifying key to a buffer.
+    pub fn write<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+        writer.write_all(&(self.fixed_commitments.len() as u32).to_be_bytes())?;
+        for commitment in &self.fixed_commitments {
+            writer.write_all(commitment.to_bytes().as_ref())?;
+        }
+        self.permutation.write(writer)?;
+
+        // write self.selectors
+        for selector in &self.selectors {
+            let mut selector_bytes = vec![0u8; selector.len() / 8 + 1];
+            for (i, selector_idx) in selector.iter().enumerate() {
+                let byte_index = i / 8;
+                let bit_index = i % 8;
+                selector_bytes[byte_index] |= (*selector_idx as u8) << bit_index;
+            }
+            writer.write_all(&selector_bytes)?;
+        }
+
+        Ok(())
+    }
+
+    /// Reads a verification key from a buffer.
+    pub fn read<R: io::Read, ConcreteCircuit: Circuit<C::Scalar>>(
+        reader: &mut R,
+        params: &Params<C>,
+    ) -> io::Result<Self> {
+        let (domain, cs, _) = keygen::create_domain::<C, ConcreteCircuit>(params);
+        let mut num_fixed_columns_be_bytes = [0u8; 4];
+        reader.read_exact(&mut num_fixed_columns_be_bytes)?;
+        let num_fixed_columns = u32::from_be_bytes(num_fixed_columns_be_bytes);
+
+        let fixed_commitments: Vec<_> = (0..num_fixed_columns)
+            .map(|_| C::read(reader))
+            .collect::<Result<_, _>>()?;
+
+        let permutation = permutation::VerifyingKey::read(reader, &cs.permutation)?;
+
+        // read selectors
+        let selectors: Vec<Vec<bool>> = vec![vec![false; params.n as usize]; cs.num_selectors]
+            .into_iter()
+            .map(|mut selector| {
+                let mut selector_bytes = vec![0u8; selector.len() / 8 + 1];
+                reader
+                    .read_exact(&mut selector_bytes)
+                    .expect("unable to read selector bytes");
+                for (i, selector_idx) in selector.iter_mut().enumerate() {
+                    let byte_index = i / 8;
+                    let bit_index = i % 8;
+                    *selector_idx = (selector_bytes[byte_index] >> bit_index) & 1 == 1;
+                }
+                Ok(selector)
+            })
+            .collect::<Result<Vec<Vec<bool>>, &str>>()
+            .unwrap();
+        let (cs, _) = cs.compress_selectors(selectors.clone());
+
+        Ok(Self::from_parts(
+            domain,
+            fixed_commitments,
+            permutation,
+            cs,
+            selectors,
+        ))
+    }
+
     fn from_parts(
         domain: EvaluationDomain<C::Scalar>,
         fixed_commitments: Vec<C>,
         permutation: permutation::VerifyingKey<C>,
         cs: ConstraintSystem<C::Scalar>,
+        selectors: Vec<Vec<bool>>,
     ) -> Self {
         // Compute cached values.
         let cs_degree = cs.degree();
@@ -68,6 +136,7 @@ impl<C: CurveAffine> VerifyingKey<C> {
             cs_degree,
             // Temporary, this is not pinned.
             transcript_repr: C::Scalar::zero(),
+            selectors,
         };
 
         let mut hasher = Blake2bParams::new()
