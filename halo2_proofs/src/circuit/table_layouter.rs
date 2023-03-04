@@ -178,6 +178,9 @@ mod tests {
 
             type FloorPlanner = SimpleFloorPlanner;
 
+            #[cfg(feature = "circuit-params")]
+            type Params = ();
+
             fn without_witnesses(&self) -> Self {
                 Self
             }
@@ -235,6 +238,9 @@ mod tests {
             type Config = FaultyCircuitConfig;
 
             type FloorPlanner = SimpleFloorPlanner;
+
+            #[cfg(feature = "circuit-params")]
+            type Params = ();
 
             fn without_witnesses(&self) -> Self {
                 Self
@@ -300,6 +306,9 @@ mod tests {
 
             type FloorPlanner = SimpleFloorPlanner;
 
+            #[cfg(feature = "circuit-params")]
+            type Params = ();
+
             fn without_witnesses(&self) -> Self {
                 Self
             }
@@ -364,6 +373,9 @@ mod tests {
             type Config = FaultyCircuitConfig;
 
             type FloorPlanner = SimpleFloorPlanner;
+
+            #[cfg(feature = "circuit-params")]
+            type Params = ();
 
             fn without_witnesses(&self) -> Self {
                 Self
