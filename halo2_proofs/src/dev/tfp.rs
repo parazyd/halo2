@@ -44,6 +44,8 @@ use crate::{
 ///     // Wrap `TracingFloorPlanner` around your existing floor planner of choice.
 ///     //type FloorPlanner = floor_planner::V1;
 ///     type FloorPlanner = TracingFloorPlanner<floor_planner::V1>;
+///     #[cfg(feature = "circuit-params")]
+///     type Params = ();
 ///
 ///     // The rest of your `Circuit` implementation is unchanged.
 ///     type Config = MyConfig;
@@ -126,6 +128,8 @@ impl<'c, F: Field, C: Circuit<F>> TracingCircuit<'c, F, C> {
 impl<'c, F: Field, C: Circuit<F>> Circuit<F> for TracingCircuit<'c, F, C> {
     type Config = C::Config;
     type FloorPlanner = C::FloorPlanner;
+    #[cfg(feature = "circuit-params")]
+    type Params = ();
 
     fn without_witnesses(&self) -> Self {
         Self::owned(self.inner_ref().without_witnesses())

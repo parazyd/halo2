@@ -800,6 +800,8 @@ pub(crate) mod tests {
     impl<Lookup: PallasLookupRangeCheck> Circuit<pallas::Base> for MyEccCircuit<Lookup> {
         type Config = EccConfig<TestFixedBases, Lookup>;
         type FloorPlanner = SimpleFloorPlanner;
+        #[cfg(feature = "circuit-params")]
+        type Params = ();
 
         fn without_witnesses(&self) -> Self {
             MyEccCircuit::with_version(false, self.circuit_version)

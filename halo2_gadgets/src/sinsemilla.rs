@@ -807,6 +807,8 @@ pub(crate) mod tests {
     impl<Lookup: PallasLookupRangeCheck> Circuit<pallas::Base> for MySinsemillaCircuit<Lookup> {
         type Config = EccSinsemillaConfig<Lookup>;
         type FloorPlanner = SimpleFloorPlanner;
+        #[cfg(feature = "circuit-params")]
+        type Params = ();
 
         fn without_witnesses(&self) -> Self {
             MySinsemillaCircuit::new()
