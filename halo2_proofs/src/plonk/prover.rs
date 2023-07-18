@@ -732,6 +732,7 @@ pub fn create_proof<
 fn test_create_proof() {
     use crate::{
         circuit::SimpleFloorPlanner,
+        pasta::pallas,
         plonk::{keygen_pk, keygen_vk},
         transcript::{Blake2bWrite, Challenge255},
     };
@@ -740,11 +741,16 @@ fn test_create_proof() {
 
     #[derive(Clone, Copy)]
     struct MyCircuit {
-        data: u64,
+        data: pallas::Base,
     }
 
-    impl<F: Field> Circuit<F> for MyCircuit {
-        type Config = ();
+    #[derive(Clone, Copy)]
+    struct MyConfig {
+        data: pallas::Base,
+    }
+
+    impl Circuit<pallas::Base> for MyCircuit {
+        type Config = MyConfig;
 
         type FloorPlanner = SimpleFloorPlanner;
 
@@ -752,23 +758,31 @@ fn test_create_proof() {
             *self
         }
 
-        fn configure(_meta: &mut ConstraintSystem<F>) -> Self::Config {}
+        fn configure(_meta: &mut ConstraintSystem<pallas::Base>) -> Self::Config {
+            Self::Config {
+                data: pallas::Base::from(69),
+            }
+        }
 
-        fn configure_with_self(&self, _meta: &mut ConstraintSystem<F>) -> Self::Config {
-            println!("self.data: {:?}", self.data);
+        fn configure_with_self(&self, _meta: &mut ConstraintSystem<pallas::Base>) -> Self::Config {
+            Self::Config { data: self.data }
         }
 
         fn synthesize(
             &self,
             _config: Self::Config,
-            _layouter: impl crate::circuit::Layouter<F>,
+            _layouter: impl crate::circuit::Layouter<pallas::Base>,
         ) -> Result<(), Error> {
             Ok(())
         }
     }
 
     let params: Params<EqAffine> = Params::new(3);
-    let circuit = MyCircuit { data: 42 };
+    let circuit = MyCircuit {
+        data: pallas::Base::from(42),
+    };
+    let config = circuit.configure_with_self(&mut crate::plonk::ConstraintSystem::default());
+    assert_eq!(config.data, pallas::Base::from(42));
     let vk = keygen_vk(&params, &circuit).expect("keygen_vk should not fail");
     let pk = keygen_pk(&params, vk, &circuit).expect("keygen_pk should not fail");
     let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
