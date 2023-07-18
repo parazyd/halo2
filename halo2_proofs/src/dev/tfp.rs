@@ -131,6 +131,10 @@ impl<'c, F: Field, C: Circuit<F>> Circuit<F> for TracingCircuit<'c, F, C> {
         C::configure(meta)
     }
 
+    fn configure_with_self(&self, meta: &mut ConstraintSystem<F>) -> Self::Config {
+        self.inner_ref().configure_with_self(meta)
+    }
+
     fn synthesize(&self, config: Self::Config, layouter: impl Layouter<F>) -> Result<(), Error> {
         let _span = debug_span!("synthesize").entered();
         self.inner_ref()

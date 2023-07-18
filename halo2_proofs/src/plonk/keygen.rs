@@ -24,6 +24,7 @@ use crate::{
 
 pub(crate) fn create_domain<C, ConcreteCircuit>(
     params: &Params<C>,
+    #[cfg(feature = "circuit-self")] circuit: &ConcreteCircuit,
 ) -> (
     EvaluationDomain<C::Scalar>,
     ConstraintSystem<C::Scalar>,
@@ -34,6 +35,10 @@ where
     ConcreteCircuit: Circuit<C::Scalar>,
 {
     let mut cs = ConstraintSystem::default();
+
+    #[cfg(feature = "circuit-self")]
+    let config = circuit.configure_with_self(&mut cs);
+    #[cfg(not(feature = "circuit-self"))]
     let config = ConcreteCircuit::configure(&mut cs);
 
     let degree = cs.degree();
@@ -195,7 +200,11 @@ where
     C::Scalar: FromUniformBytes<64>,
     ConcreteCircuit: Circuit<C::Scalar>,
 {
-    let (domain, cs, config) = create_domain::<C, ConcreteCircuit>(params);
+    let (domain, cs, config) = create_domain::<C, ConcreteCircuit>(
+        params,
+        #[cfg(feature = "circuit-self")]
+        circuit,
+    );
 
     if (params.n as usize) < cs.minimum_rows() {
         return Err(Error::not_enough_rows_available(params.k));
@@ -255,6 +264,10 @@ where
     ConcreteCircuit: Circuit<C::Scalar>,
 {
     let mut cs = ConstraintSystem::default();
+
+    #[cfg(feature = "circuit-self")]
+    let config = circuit.configure_with_self(&mut cs);
+    #[cfg(not(feature = "circuit-self"))]
     let config = ConcreteCircuit::configure(&mut cs);
 
     let cs = cs;

@@ -261,7 +261,12 @@ impl<G: PrimeGroup, ConcreteCircuit: Circuit<G::Scalar>> CircuitCost<G, Concrete
     pub fn measure(k: u32, circuit: &ConcreteCircuit) -> Self {
         // Collect the layout details.
         let mut cs = ConstraintSystem::default();
+
+        #[cfg(feature = "circuit-self")]
+        let config = circuit.configure_with_self(&mut cs);
+        #[cfg(not(feature = "circuit-self"))]
         let config = ConcreteCircuit::configure(&mut cs);
+
         let mut layout = Layout::new(k, 1 << k, cs.num_selectors);
         ConcreteCircuit::FloorPlanner::synthesize(
             &mut layout,
