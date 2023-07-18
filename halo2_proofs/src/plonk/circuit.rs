@@ -479,6 +479,7 @@ pub trait Circuit<F: Field> {
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config;
 
     /// Same as configure but takes self to take additional runtime data.
+    /// Credit: https://github.com/privacy-scaling-explorations/halo2/pull/168
     fn configure_with_self(&self, meta: &mut ConstraintSystem<F>) -> Self::Config {
         Self::configure(meta)
     }
