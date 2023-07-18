@@ -490,7 +490,12 @@ impl<F: Field + Ord> MockProver<F> {
         let n = 1 << k;
 
         let mut cs = ConstraintSystem::default();
+
+        #[cfg(feature = "circuit-self")]
+        let config = circuit.configure_with_self(&mut cs);
+        #[cfg(not(feature = "circuit-self"))]
         let config = ConcreteCircuit::configure(&mut cs);
+
         let cs = cs;
 
         if n < cs.minimum_rows() {

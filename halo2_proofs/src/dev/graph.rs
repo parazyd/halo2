@@ -22,7 +22,12 @@ pub fn circuit_dot_graph<F: Field, ConcreteCircuit: Circuit<F>>(
 ) -> String {
     // Collect the graph details.
     let mut cs = ConstraintSystem::default();
+
+    #[cfg(feature = "circuit-self")]
+    let config = circuit.configure_with_self(&mut cs, params);
+    #[cfg(not(feature = "circuit-self"))]
     let config = ConcreteCircuit::configure(&mut cs);
+
     let mut graph = Graph::default();
     ConcreteCircuit::FloorPlanner::synthesize(&mut graph, circuit, config, cs.constants).unwrap();
 

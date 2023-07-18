@@ -61,6 +61,10 @@ pub fn create_proof<
 
     let domain = &pk.vk.domain;
     let mut meta = ConstraintSystem::default();
+    // Since there is 1 proving key for all the circuits, the circuits should share the same configuration.
+    #[cfg(feature = "circuit-self")]
+    let config = circuits[0].configure_with_self(&mut meta);
+    #[cfg(not(feature = "circuit-self"))]
     let config = ConcreteCircuit::configure(&mut meta);
 
     // Selector optimizations cannot be applied here; use the ConstraintSystem
@@ -735,7 +739,9 @@ fn test_create_proof() {
     use rand_core::OsRng;
 
     #[derive(Clone, Copy)]
-    struct MyCircuit;
+    struct MyCircuit {
+        data: u64,
+    }
 
     impl<F: Field> Circuit<F> for MyCircuit {
         type Config = ();
@@ -748,6 +754,10 @@ fn test_create_proof() {
 
         fn configure(_meta: &mut ConstraintSystem<F>) -> Self::Config {}
 
+        fn configure_with_self(&self, _meta: &mut ConstraintSystem<F>) -> Self::Config {
+            println!("self.data: {:?}", self.data);
+        }
+
         fn synthesize(
             &self,
             _config: Self::Config,
@@ -758,15 +768,16 @@ fn test_create_proof() {
     }
 
     let params: Params<EqAffine> = Params::new(3);
-    let vk = keygen_vk(&params, &MyCircuit).expect("keygen_vk should not fail");
-    let pk = keygen_pk(&params, vk, &MyCircuit).expect("keygen_pk should not fail");
+    let circuit = MyCircuit { data: 42 };
+    let vk = keygen_vk(&params, &circuit).expect("keygen_vk should not fail");
+    let pk = keygen_pk(&params, vk, &circuit).expect("keygen_pk should not fail");
     let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
 
     // Create proof with wrong number of instances
     let proof = create_proof(
         &params,
         &pk,
-        &[MyCircuit, MyCircuit],
+        &[circuit, circuit],
         &[],
         OsRng,
         &mut transcript,
@@ -777,7 +788,7 @@ fn test_create_proof() {
     create_proof(
         &params,
         &pk,
-        &[MyCircuit, MyCircuit],
+        &[circuit, circuit],
         &[&[], &[]],
         OsRng,
         &mut transcript,

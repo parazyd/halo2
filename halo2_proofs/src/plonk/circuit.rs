@@ -478,6 +478,11 @@ pub trait Circuit<F: Field> {
     /// arrangement, column arrangement, etc.
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config;
 
+    /// Same as configure but takes self to take additional runtime data.
+    fn configure_with_self(&self, meta: &mut ConstraintSystem<F>) -> Self::Config {
+        Self::configure(meta)
+    }
+
     /// Given the provided `cs`, synthesize the circuit. The concrete type of
     /// the caller will be different depending on the context, and they may or
     /// may not expect to have a witness present.
