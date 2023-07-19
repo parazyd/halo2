@@ -470,17 +470,31 @@ pub trait Circuit<F: Field> {
     /// `Circuit` trait because its behaviour is circuit-critical.
     type FloorPlanner: FloorPlanner;
 
+    /// Runtime parameters to configure the circuit.
+    #[cfg(feature = "circuit-params")]
+    type Params: Default = ();
+
     /// Returns a copy of this circuit with no witness values (i.e. all witnesses set to
     /// `None`). For most circuits, this will be equal to `Self::default()`.
     fn without_witnesses(&self) -> Self;
+
+    /// Optional method for circuit writer to define runtime configuration paramters.
+    #[cfg(feature = "circuit-params")]
+    fn params(&self) -> Self::Params {
+        Self::Params::default()
+    }
 
     /// The circuit is given an opportunity to describe the exact gate
     /// arrangement, column arrangement, etc.
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config;
 
-    /// Same as configure but takes self to take additional runtime data.
+    /// Same as configure but takes params.
     /// Credit: https://github.com/privacy-scaling-explorations/halo2/pull/168
-    fn configure_with_self(&self, meta: &mut ConstraintSystem<F>) -> Self::Config {
+    #[cfg(feature = "circuit-params")]
+    fn configure_with_params(
+        meta: &mut ConstraintSystem<F>,
+        _params: Self::Params,
+    ) -> Self::Config {
         Self::configure(meta)
     }
 

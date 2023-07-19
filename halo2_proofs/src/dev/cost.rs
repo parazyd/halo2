@@ -262,9 +262,9 @@ impl<G: PrimeGroup, ConcreteCircuit: Circuit<G::Scalar>> CircuitCost<G, Concrete
         // Collect the layout details.
         let mut cs = ConstraintSystem::default();
 
-        #[cfg(feature = "circuit-self")]
-        let config = circuit.configure_with_self(&mut cs);
-        #[cfg(not(feature = "circuit-self"))]
+        #[cfg(feature = "circuit-params")]
+        let config = ConcreteCircuit::configure_with_params(&mut cs, circuit.params());
+        #[cfg(not(feature = "circuit-params"))]
         let config = ConcreteCircuit::configure(&mut cs);
 
         let mut layout = Layout::new(k, 1 << k, cs.num_selectors);

@@ -7,6 +7,7 @@
 #![deny(missing_debug_implementations)]
 #![deny(missing_docs)]
 #![deny(unsafe_code)]
+#![feature(associated_type_defaults)]
 
 pub mod arithmetic;
 pub mod circuit;

@@ -82,7 +82,7 @@ gadget-traces = ["backtrace"]
 sanity-checks = []
 batch = ["rand_core/getrandom"]
 floor-planner-v1-legacy-pdqsort = ["halo2_legacy_pdqsort"]
-circuit-self = []
+circuit-params = []
 
 # In-development features
 # See https://zcash.github.io/halo2/dev/features.html

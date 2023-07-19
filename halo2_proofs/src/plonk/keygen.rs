@@ -24,7 +24,7 @@ use crate::{
 
 pub(crate) fn create_domain<C, ConcreteCircuit>(
     params: &Params<C>,
-    #[cfg(feature = "circuit-self")] circuit: &ConcreteCircuit,
+    #[cfg(feature = "circuit-params")] circuit_params: ConcreteCircuit::Params,
 ) -> (
     EvaluationDomain<C::Scalar>,
     ConstraintSystem<C::Scalar>,
@@ -36,9 +36,9 @@ where
 {
     let mut cs = ConstraintSystem::default();
 
-    #[cfg(feature = "circuit-self")]
-    let config = circuit.configure_with_self(&mut cs);
-    #[cfg(not(feature = "circuit-self"))]
+    #[cfg(feature = "circuit-params")]
+    let config = ConcreteCircuit::configure_with_params(&mut cs, circuit_params);
+    #[cfg(not(feature = "circuit-params"))]
     let config = ConcreteCircuit::configure(&mut cs);
 
     let degree = cs.degree();
@@ -202,8 +202,8 @@ where
 {
     let (domain, cs, config) = create_domain::<C, ConcreteCircuit>(
         params,
-        #[cfg(feature = "circuit-self")]
-        circuit,
+        #[cfg(feature = "circuit-params")]
+        circuit.params(),
     );
 
     if (params.n as usize) < cs.minimum_rows() {
@@ -265,9 +265,9 @@ where
 {
     let mut cs = ConstraintSystem::default();
 
-    #[cfg(feature = "circuit-self")]
-    let config = circuit.configure_with_self(&mut cs);
-    #[cfg(not(feature = "circuit-self"))]
+    #[cfg(feature = "circuit-params")]
+    let config = ConcreteCircuit::configure_with_params(&mut cs, circuit.params());
+    #[cfg(not(feature = "circuit-params"))]
     let config = ConcreteCircuit::configure(&mut cs);
 
     let cs = cs;

@@ -81,8 +81,13 @@ where
     pub fn read<R: io::Read, ConcreteCircuit: Circuit<C::Scalar>>(
         reader: &mut R,
         params: &Params<C>,
+        #[cfg(feature = "circuit-params")] circuit_params: ConcreteCircuit::Params,
     ) -> io::Result<Self> {
-        let (domain, cs, _) = keygen::create_domain::<C, ConcreteCircuit>(params);
+        let (domain, cs, _) = keygen::create_domain::<C, ConcreteCircuit>(
+            params,
+            #[cfg(feature = "circuit-params")]
+            circuit_params,
+        );
         let mut num_fixed_columns_be_bytes = [0u8; 4];
         reader.read_exact(&mut num_fixed_columns_be_bytes)?;
         let num_fixed_columns = u32::from_be_bytes(num_fixed_columns_be_bytes);

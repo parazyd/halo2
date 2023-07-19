@@ -62,9 +62,9 @@ pub fn create_proof<
     let domain = &pk.vk.domain;
     let mut meta = ConstraintSystem::default();
     // Since there is 1 proving key for all the circuits, the circuits should share the same configuration.
-    #[cfg(feature = "circuit-self")]
-    let config = circuits[0].configure_with_self(&mut meta);
-    #[cfg(not(feature = "circuit-self"))]
+    #[cfg(feature = "circuit-params")]
+    let config = ConcreteCircuit::configure_with_params(&mut meta, circuits[0].params());
+    #[cfg(not(feature = "circuit-params"))]
     let config = ConcreteCircuit::configure(&mut meta);
 
     // Selector optimizations cannot be applied here; use the ConstraintSystem
@@ -728,7 +728,7 @@ pub fn create_proof<
     multiopen::create_proof(params, rng, transcript, instances).map_err(|_| Error::Opening)
 }
 
-#[cfg(feature = "circuit-self")]
+#[cfg(feature = "circuit-params")]
 #[test]
 fn test_create_proof() {
     use crate::{
@@ -740,7 +740,7 @@ fn test_create_proof() {
     use pasta_curves::EqAffine;
     use rand_core::OsRng;
 
-    #[derive(Clone)]
+    #[derive(Clone, Default)]
     struct MyCircuit {
         vals: Vec<Value<pallas::Base>>,
     }
@@ -770,7 +770,13 @@ fn test_create_proof() {
 
         type FloorPlanner = SimpleFloorPlanner;
 
+        type Params = Self;
+
         fn without_witnesses(&self) -> Self {
+            self.clone()
+        }
+
+        fn params(&self) -> Self::Params {
             self.clone()
         }
 
@@ -781,8 +787,11 @@ fn test_create_proof() {
             }
         }
 
-        fn configure_with_self(&self, meta: &mut ConstraintSystem<pallas::Base>) -> Self::Config {
-            let advices = vec![meta.advice_column(); self.vals.len()];
+        fn configure_with_params(
+            meta: &mut ConstraintSystem<pallas::Base>,
+            params: Self::Params,
+        ) -> Self::Config {
+            let advices = vec![meta.advice_column(); params.vals.len()];
             let primary = meta.instance_column();
 
             for advice in advices.iter() {
