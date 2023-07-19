@@ -728,6 +728,7 @@ pub fn create_proof<
     multiopen::create_proof(params, rng, transcript, instances).map_err(|_| Error::Opening)
 }
 
+#[cfg(feature = "circuit-self")]
 #[test]
 fn test_create_proof() {
     use crate::{
@@ -739,14 +740,29 @@ fn test_create_proof() {
     use pasta_curves::EqAffine;
     use rand_core::OsRng;
 
-    #[derive(Clone, Copy)]
+    #[derive(Clone)]
     struct MyCircuit {
-        data: pallas::Base,
+        vals: Vec<Value<pallas::Base>>,
     }
 
-    #[derive(Clone, Copy)]
+    #[derive(Clone)]
     struct MyConfig {
-        data: pallas::Base,
+        advices: Vec<Column<Advice>>,
+        primary: Column<Instance>,
+    }
+
+    fn assign_free_advice<V: Copy>(
+        mut layouter: impl crate::circuit::Layouter<pallas::Base>,
+        column: Column<Advice>,
+        value: Value<V>,
+    ) -> Result<crate::circuit::AssignedCell<V, pallas::Base>, crate::plonk::Error>
+    where
+        for<'v> Assigned<pallas::Base>: From<&'v V>,
+    {
+        layouter.assign_region(
+            || "load private",
+            |mut region| region.assign_advice(|| "load private", column, 0, || value),
+        )
     }
 
     impl Circuit<pallas::Base> for MyCircuit {
@@ -755,34 +771,55 @@ fn test_create_proof() {
         type FloorPlanner = SimpleFloorPlanner;
 
         fn without_witnesses(&self) -> Self {
-            *self
+            self.clone()
         }
 
-        fn configure(_meta: &mut ConstraintSystem<pallas::Base>) -> Self::Config {
+        fn configure(meta: &mut ConstraintSystem<pallas::Base>) -> Self::Config {
             Self::Config {
-                data: pallas::Base::from(69),
+                advices: vec![],
+                primary: meta.instance_column(),
             }
         }
 
-        fn configure_with_self(&self, _meta: &mut ConstraintSystem<pallas::Base>) -> Self::Config {
-            Self::Config { data: self.data }
+        fn configure_with_self(&self, meta: &mut ConstraintSystem<pallas::Base>) -> Self::Config {
+            let advices = vec![meta.advice_column(); self.vals.len()];
+            let primary = meta.instance_column();
+
+            for advice in advices.iter() {
+                meta.enable_equality(*advice);
+            }
+            meta.enable_equality(primary);
+            Self::Config { advices, primary }
         }
 
         fn synthesize(
             &self,
-            _config: Self::Config,
-            _layouter: impl crate::circuit::Layouter<pallas::Base>,
+            config: Self::Config,
+            mut layouter: impl crate::circuit::Layouter<pallas::Base>,
         ) -> Result<(), Error> {
+            let mut witnessed = vec![];
+            for (i, val) in self.vals.iter().enumerate() {
+                let witness = assign_free_advice(
+                    layouter.namespace(|| format!("witness {}", i)),
+                    config.advices[i],
+                    *val,
+                )?;
+                witnessed.push(witness);
+            }
+            for (i, witness) in witnessed.iter().enumerate() {
+                layouter.constrain_instance(witness.cell(), config.primary, i)?
+            }
             Ok(())
         }
     }
 
-    let params: Params<EqAffine> = Params::new(3);
-    let circuit = MyCircuit {
-        data: pallas::Base::from(42),
-    };
-    let config = circuit.configure_with_self(&mut crate::plonk::ConstraintSystem::default());
-    assert_eq!(config.data, pallas::Base::from(42));
+    let params: Params<EqAffine> = Params::new(5);
+    let vals = vec![
+        Value::known(pallas::Base::from(1)),
+        Value::known(pallas::Base::from(2)),
+        Value::known(pallas::Base::from(3)),
+    ];
+    let circuit = MyCircuit { vals };
     let vk = keygen_vk(&params, &circuit).expect("keygen_vk should not fail");
     let pk = keygen_pk(&params, vk, &circuit).expect("keygen_pk should not fail");
     let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
@@ -791,21 +828,19 @@ fn test_create_proof() {
     let proof = create_proof(
         &params,
         &pk,
-        &[circuit, circuit],
+        &[circuit.clone(), circuit.clone()],
         &[],
         OsRng,
         &mut transcript,
     );
     assert!(matches!(proof.unwrap_err(), Error::InvalidInstances));
 
+    let instance = vec![
+        pallas::Base::from(1),
+        pallas::Base::from(2),
+        pallas::Base::from(3),
+    ];
     // Create proof with correct number of instances
-    create_proof(
-        &params,
-        &pk,
-        &[circuit, circuit],
-        &[&[], &[]],
-        OsRng,
-        &mut transcript,
-    )
-    .expect("proof generation should not fail");
+    let prover = crate::dev::MockProver::run(5, &circuit, vec![instance]).unwrap();
+    prover.assert_satisfied();
 }
