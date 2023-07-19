@@ -478,7 +478,7 @@ pub trait Circuit<F: Field> {
     /// `None`). For most circuits, this will be equal to `Self::default()`.
     fn without_witnesses(&self) -> Self;
 
-    /// Optional method for circuit writer to define runtime configuration paramters.
+    /// For defining runtime configuration paramters.
     #[cfg(feature = "circuit-params")]
     fn params(&self) -> Self::Params {
         Self::Params::default()
