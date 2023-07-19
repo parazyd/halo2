@@ -24,7 +24,7 @@ pub fn circuit_dot_graph<F: Field, ConcreteCircuit: Circuit<F>>(
     let mut cs = ConstraintSystem::default();
 
     #[cfg(feature = "circuit-self")]
-    let config = circuit.configure_with_self(&mut cs, params);
+    let config = circuit.configure_with_self(&mut cs);
     #[cfg(not(feature = "circuit-self"))]
     let config = ConcreteCircuit::configure(&mut cs);
 
