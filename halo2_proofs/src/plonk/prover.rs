@@ -828,7 +828,16 @@ fn test_create_proof() {
         Value::known(pallas::Base::from(2)),
         Value::known(pallas::Base::from(3)),
     ];
+
     let circuit = MyCircuit { vals };
+    // Render circuit digram
+    use crate::dev::CircuitLayout;
+    use plotters::prelude::*;
+    let root = BitMapBackend::new("../target/layout.png", (3840, 2160)).into_drawing_area();
+    root.fill(&WHITE).unwrap();
+    let root = root.titled("Circuit Layout", ("sans-serif", 60)).unwrap();
+    CircuitLayout::default().render(5, &circuit, &root).unwrap();
+
     let vk = keygen_vk(&params, &circuit).expect("keygen_vk should not fail");
     let pk = keygen_pk(&params, vk, &circuit).expect("keygen_pk should not fail");
     let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
