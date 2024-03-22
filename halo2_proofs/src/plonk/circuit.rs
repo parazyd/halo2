@@ -918,7 +918,8 @@ impl<F: Field, C: Into<Constraint<F>>, Iter: IntoIterator<Item = C>> IntoIterato
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct Gate<F: Field> {
+/// Gate
+pub struct Gate<F: Field> {
     name: &'static str,
     constraint_names: Vec<&'static str>,
     polys: Vec<Expression<F>>,
@@ -929,22 +930,27 @@ pub(crate) struct Gate<F: Field> {
 }
 
 impl<F: Field> Gate<F> {
-    pub(crate) fn name(&self) -> &'static str {
+    /// Return the gate name
+    pub fn name(&self) -> &'static str {
         self.name
     }
 
-    pub(crate) fn constraint_name(&self, constraint_index: usize) -> &'static str {
+    /// Return the constraint name
+    pub fn constraint_name(&self, constraint_index: usize) -> &'static str {
         self.constraint_names[constraint_index]
     }
 
-    pub(crate) fn polynomials(&self) -> &[Expression<F>] {
+    /// Return the gate polynomials
+    pub fn polynomials(&self) -> &[Expression<F>] {
         &self.polys
     }
 
-    pub(crate) fn queried_selectors(&self) -> &[Selector] {
+    /// Return the queried selectors in the gate
+    pub fn queried_selectors(&self) -> &[Selector] {
         &self.queried_selectors
     }
 
+    /// Return the queried cells in the gate
     pub(crate) fn queried_cells(&self) -> &[VirtualCell] {
         &self.queried_cells
     }
@@ -1491,6 +1497,76 @@ impl<F: Field> ConstraintSystem<F> {
                 // permutation polynomial between the roles of l_last, l_0
                 // and the interstitial values.)
             + 1 // for at least one row
+    }
+
+    /// Return `self.num_fixed_columns`
+    pub fn get_num_fixed_columns(&self) -> usize {
+        self.num_fixed_columns
+    }
+
+    /// Return `self.num_advice_columns`
+    pub fn get_num_advice_columns(&self) -> usize {
+        self.num_advice_columns
+    }
+
+    /// Return `self.num_instance_columns`
+    pub fn get_num_instance_columns(&self) -> usize {
+        self.num_instance_columns
+    }
+
+    /// Return `self.num_selectors`
+    pub fn get_num_selectors(&self) -> usize {
+        self.num_selectors
+    }
+
+    /// Return `self.selector_map`
+    pub fn get_selector_map(&self) -> &[Column<Fixed>] {
+        &self.selector_map
+    }
+
+    /// Return `self.gates`
+    pub fn get_gates(&self) -> &[Gate<F>] {
+        &self.gates
+    }
+
+    /// Return `self.advice_queries`
+    pub fn get_advice_queries(&self) -> &[(Column<Advice>, Rotation)] {
+        &self.advice_queries
+    }
+
+    /// Return `self.num_advice_queries`
+    pub fn get_num_advice_queries(&self) -> &[usize] {
+        &self.num_advice_queries
+    }
+
+    /// Return `self.instance_queries`
+    pub fn get_instance_queries(&self) -> &[(Column<Instance>, Rotation)] {
+        &self.instance_queries
+    }
+
+    /// Return `self.fixed_queries`
+    pub fn get_fixed_queries(&self) -> &[(Column<Fixed>, Rotation)] {
+        &self.fixed_queries
+    }
+
+    /// Return `self.permutation`
+    pub fn get_permutation(&self) -> &permutation::Argument {
+        &self.permutation
+    }
+
+    /// Return `self.lookups`
+    pub fn get_lookups(&self) -> &[lookup::Argument<F>] {
+        &self.lookups
+    }
+
+    /// Return `self.constants`
+    pub fn get_constants(&self) -> &[Column<Fixed>] {
+        &self.constants
+    }
+
+    /// Return `self.minimum_degree`
+    pub fn get_minimum_degree(&self) -> &Option<usize> {
+        &self.minimum_degree
     }
 }
 
