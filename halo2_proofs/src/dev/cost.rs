@@ -258,9 +258,16 @@ impl<G: PrimeGroup, ConcreteCircuit: Circuit<G::Scalar>> CircuitCost<G, Concrete
     /// Measures a circuit with parameter constant `k`.
     ///
     /// Panics if `k` is not large enough for the circuit.
-    pub fn measure(k: u32, circuit: &ConcreteCircuit) -> Self {
+    pub fn measure(
+        k: u32,
+        circuit: &ConcreteCircuit,
+        #[cfg(feature = "circuit-params")] params: ConcreteCircuit::Params,
+    ) -> Self {
         // Collect the layout details.
         let mut cs = ConstraintSystem::default();
+        #[cfg(feature = "circuit-params")]
+        let config = ConcreteCircuit::configure_with_params(&mut cs, params);
+        #[cfg(not(feature = "circuit-params"))]
         let config = ConcreteCircuit::configure(&mut cs);
         let mut layout = Layout::new(k, 1 << k, cs.num_selectors);
         ConcreteCircuit::FloorPlanner::synthesize(
